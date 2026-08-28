@@ -1,191 +1,222 @@
----
-title: Text Generation Demo
-emoji: ✍️
-colorFrom: blue
-colorTo: indigo
-sdk: gradio
-python_version: "3.10"
----
-
-# Text Generation App
+# AI Text Generation App
 
 ## Overview
 
-This beginner-friendly demo shows how to build a real text-generation application with a pretrained Hugging Face causal language model and Gradio. Type an instruction, adjust the generation controls, and click **Generate** to receive a new response from the model.
+This beginner-friendly application demonstrates real text generation through an OpenAI language model. It uses Gradio so a user can select a task, enter a prompt or source text, adjust generation controls, and receive a response.
+
+The application uses the OpenAI API instead of downloading or running a local model. This keeps the deployed Python service lightweight and suitable for a small Render instance. Render hosting and OpenAI API usage are separate: free hosting does not necessarily make API usage free, so review your OpenAI account limits and billing before sharing the app publicly.
 
 ## Features
 
-- Real local inference with a pretrained instruction-tuned language model.
-- Prompt input and generated-text output.
-- Temperature, top-p, and maximum-new-token controls.
-- Generate and Clear buttons.
-- Five example prompts that populate the input box.
-- CUDA/CPU auto-detection and inference mode.
-- Clear messages for empty prompts, invalid settings, model-loading errors, and generation errors.
-- Compatible with local execution and Hugging Face Spaces using the Gradio SDK.
+- Creative writing, question answering, and summarization modes
+- Task-specific model instructions
+- Temperature control from 0.0 to 1.5
+- Maximum output token control from 50 to 500
+- Generate and Clear buttons
+- Example prompts for every task
+- Server-side API key handling
+- Friendly messages for missing keys, rate limits, connection failures, and invalid inputs
+- Render-compatible host and port configuration
 
 ## Tech Stack
 
 - Python 3
-- [Hugging Face Transformers](https://huggingface.co/docs/transformers/index)
-- [PyTorch](https://pytorch.org/docs/stable/index.html)
-- [Gradio](https://www.gradio.app/docs)
-- [Accelerate](https://huggingface.co/docs/accelerate/index)
+- Gradio
+- OpenAI Python SDK
+- OpenAI Responses API
+- Render for lightweight web hosting
 
-## Model
+The project intentionally does not use Transformers, PyTorch, TensorFlow, or downloaded model weights.
 
-The deployed default uses [`HuggingFaceTB/SmolLM2-135M-Instruct`](https://huggingface.co/HuggingFaceTB/SmolLM2-135M-Instruct), a compact instruction-tuned causal language model published under the Apache-2.0 license. It is used because Render Free has a 512 MB memory limit and the recommended [`Qwen/Qwen2.5-0.5B-Instruct`](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct) does not fit in that environment. SmolLM2's model card provides the recommended Transformers usage. The selected model is downloaded from the Hugging Face Hub the first time the app starts and then kept in memory for later requests.
+## Architecture
 
-To use Qwen on a machine with more memory, set the `MODEL_NAME` environment variable to `Qwen/Qwen2.5-0.5B-Instruct` before starting the app. The app uses the same generation pipeline for either model.
+```text
+User
+  ↓
+Gradio UI
+  ↓
+Python Application
+  ↓
+OpenAI Responses API
+  ↓
+OpenAI Language Model
+  ↓
+Generated Response
+  ↓
+Gradio UI
+```
+
+## Supported Tasks
+
+### Creative Writing
+
+The model creates coherent content based on the requested topic, tone, format, and length.
+
+### Question Answering
+
+The model answers a question clearly and uses simple explanations when appropriate.
+
+### Summarization
+
+The model condenses supplied text while preserving the main ideas and important details.
 
 ## How It Works
 
-```text
-User Prompt
-     ↓
-Tokenizer
-     ↓
-Pretrained Language Model
-     ↓
-Token Generation
-     ↓
-Decoded Text
-     ↓
-Gradio Output
-```
+1. The user selects a task and enters a prompt or source text.
+2. Gradio sends the values to the Python callback.
+3. The callback validates the input and selects task-specific instructions.
+4. The OpenAI Responses API receives the instructions, input, temperature, and output-token limit.
+5. The returned text is displayed in the Gradio output box.
 
-1. The user enters a prompt in the Gradio interface.
-2. The tokenizer converts the prompt into token IDs, which are numerical inputs for the model.
-3. The model predicts likely next tokens and samples a continuation using the selected settings.
-4. The app decodes the generated token IDs back into readable text and displays only the new continuation.
-
-The tokenizer is loaded once alongside the model. The model is also loaded once at startup; it is not reloaded for each button click.
+The tokenizer and model inference are handled by OpenAI's hosted model service. This application has no local model-loading step and does not download model weights during deployment.
 
 ## Project Structure
 
 ```text
 text-generation-app/
 ├── app.py
+├── llm.py
 ├── requirements.txt
 ├── README.md
 ├── .gitignore
+├── .env.example
 └── screenshots/
     └── demo.png
 ```
 
-## Installation
+## Local Setup
 
-Create and activate a virtual environment if desired, then install the dependencies:
+Clone the repository and create a virtual environment:
+
+```bash
+git clone <repository-url>
+cd text-generation-app
+python -m venv venv
+```
+
+On Windows PowerShell, activate it with:
+
+```powershell
+venv\Scripts\activate
+```
+
+On macOS/Linux, activate it with:
+
+```bash
+source venv/bin/activate
+```
+
+Install dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-The dependency ranges target the versions supported by Hugging Face ZeroGPU and the small-model Render deployment: Python 3.10 or 3.12, Gradio 4+, and PyTorch 2.8+. They keep Transformers, Gradio, and Accelerate within compatible major versions.
+## Environment Variables
 
-## Usage
+Create a local `.env` file from `.env.example` and add your own values:
 
-Run the application from the project directory:
+```text
+OPENAI_API_KEY=your_actual_openai_api_key
+OPENAI_MODEL=gpt-4.1-mini
+```
+
+Required variables:
+
+- `OPENAI_API_KEY`: your private OpenAI API key
+- `OPENAI_MODEL`: the OpenAI text model to call; the default is `gpt-4.1-mini`
+
+Never commit `.env`, paste a key into source code, or expose a key in frontend JavaScript. The `.env` file is ignored by Git.
+
+## Running the App
+
+After creating `.env`, run:
 
 ```bash
 python app.py
 ```
 
-Gradio prints a local URL, usually `http://127.0.0.1:7860`. Open that URL in a browser. The first startup may take longer because the model files must be downloaded and loaded.
+Open the local Gradio URL shown in the terminal, normally `http://127.0.0.1:7860`.
 
 ## Example Prompts
 
-1. Write a short story about a robot discovering the ocean.
-2. Explain machine learning to a beginner in five sentences.
-3. Write a professional email asking for a project update.
-4. Give me three ideas for a weekend project.
-5. Write a short paragraph about the future of artificial intelligence.
+### Creative Writing
+
+- Write a short story about a student who discovers an AI assistant that can predict the future.
+- Write a creative paragraph describing a city on Mars.
+
+### Question Answering
+
+- What is the difference between supervised and unsupervised learning?
+- Explain transformers in simple terms.
+
+### Summarization
+
+- Paste a paragraph about artificial intelligence and ask the app to summarize it.
+- Paste a project description and use the Summarization mode to extract its key points.
 
 ## Generation Parameters
 
-- **Temperature** controls how strongly the model favors its most likely next token. Lower values tend to be more predictable; higher values can produce more varied wording. Very high values may reduce coherence.
-- **Top-p** limits sampling to the smallest group of likely next tokens whose combined probability reaches the selected value. Lower values restrict the choices more; higher values allow a wider set of choices.
-- **Maximum new tokens** caps how many tokens can be generated after the prompt. It is a maximum, not a guarantee that the model will use every token.
-- **Do sample** is enabled in the app so temperature and top-p affect the token-selection process. Because sampling is stochastic, repeated runs can differ even when the controls stay the same.
+### Temperature
 
-## Sample Output
+Temperature ranges from 0.0 to 1.5. Lower values generally make responses more predictable, while higher values generally allow more variation. It does not guarantee a particular answer.
 
-Sample outputs depend on the model version, runtime, prompt, and sampling settings. For example, the first prompt may produce a short narrative in which a robot observes waves, salt water, and marine life for the first time. Run the app to capture the exact output for your environment.
+### Maximum Output Tokens
 
-## Limitations
+This limits the maximum amount of generated text. A larger value allows longer responses and may use more API capacity. The demo limits the control to 50–500 tokens.
 
-- The model can produce incorrect, incomplete, repetitive, or biased text.
-- CPU generation may be slow, especially with a large maximum-token value.
-- The model is small, so output quality may be less consistent than that of larger models.
-- The app does not provide fact verification, moderation, conversation history, or persistent storage.
-- The first run requires an internet connection to download the model unless the model is already cached.
-
-## Future Improvements
-
-- Add optional conversation history and a chat-style interface.
-- Add a deterministic mode using greedy or beam-search decoding.
-- Add stop sequences and an output-length estimate.
-- Add lightweight input/output moderation and clearer usage guidance.
-- Add automated UI tests and a captured screenshot after deployment.
+Different settings can produce different outputs because they change how the model selects likely next tokens. The exact result also depends on the prompt and model.
 
 ## Deployment
 
-### Option A: Hugging Face ZeroGPU, if available
+### GitHub
 
-Your Hugging Face account may show Gradio and Docker as paid while offering only Static Spaces. Do not choose Static or Gradio-Lite for this project: they do not run the Python `app.py` application.
+Create an empty GitHub repository, then run these commands from the project folder. Replace the placeholder with your own repository URL:
 
-If **ZeroGPU** is available in the hardware choices, use it:
-
-1. Create a new Space at [Hugging Face Spaces](https://huggingface.co/spaces) and select **Gradio** as the SDK.
-2. Select **ZeroGPU** hardware.
-3. Upload `app.py`, `requirements.txt`, and `README.md` to the root of the Space.
-4. Wait for the Space to build and test an example prompt.
-
-The app includes the `@spaces.GPU` decorator required for ZeroGPU. Free personal accounts in good standing can host up to two ZeroGPU Spaces; Hugging Face currently defines this as a verified account that is at least 30 days old. Free accounts have a daily GPU quota, so this is suitable for an internship demo but not unlimited production hosting. See the [ZeroGPU documentation](https://huggingface.co/docs/hub/main/spaces-zerogpu).
-
-### Option B: Render free web service
-
-If ZeroGPU is not available, Render is a practical free hosting alternative for this Python/Gradio app. The app defaults to the smaller SmolLM2 model on Render so it can fit the Free plan's memory limit:
-
-1. Create an account at [Render](https://render.com).
-2. Choose **New → Web Service**.
-3. Connect your GitHub repository.
-4. Set the build command to:
-
-   ```text
-   pip install -r requirements.txt
-   ```
-
-5. Set the start command to:
-
-   ```text
-   python app.py
-   ```
-
-6. Select the **Free** instance type and deploy.
-
-The app automatically uses Render's `PORT` environment variable and binds to `0.0.0.0`. Render free services sleep after inactivity, so the first request after sleeping may take about a minute while the model loads. Free services are intended for testing, hobby projects, and demos rather than production traffic. See [Render's free service limits](https://render.com/docs/free) and [web-service port requirements](https://render.com/docs/web-services).
-
-### Option C: Temporary Gradio link
-
-For a presentation or internship review, you can share the app temporarily from your own computer:
-
-```powershell
-$env:GRADIO_SHARE = "true"
-python app.py
+```bash
+git init
+git add .
+git status
+git commit -m "Build OpenAI text generation demo app"
+git branch -M main
+git remote add origin <YOUR_GITHUB_REPO_URL>
+git push -u origin main
 ```
 
-Gradio prints a public `gradio.live` URL. The link works only while your computer and app are running and normally expires after one week. See the official [Gradio sharing guide](https://gradio.app/guides/sharing-your-app).
+Before committing, confirm that `.env` is not listed as a tracked file. Do not commit an API key.
 
-The basic app does not require API keys or secrets. Do not claim a deployment is complete until the selected host has actually built and been tested.
+### Render Web Service
 
-See the official [Gradio Spaces guide](https://huggingface.co/docs/hub/en/spaces-sdks-gradio) and [Spaces configuration reference](https://huggingface.co/docs/hub/main/spaces-config-reference) for SDK and runtime configuration details.
+1. Push the project to GitHub.
+2. In Render, choose **New → Web Service** and connect the repository.
+3. Use a Python runtime.
+4. Set the Build Command to `pip install -r requirements.txt`.
+5. Set the Start Command to `python app.py`.
+6. In Render **Environment Variables**, add `OPENAI_API_KEY` and `OPENAI_MODEL`.
+7. Deploy and open the generated Render URL.
+
+The app listens on `0.0.0.0` and reads Render's `PORT` variable automatically. Render does not need to download an LLM because inference happens through the OpenAI API. Free Render services can sleep or have resource limits, and OpenAI API charges or account limits are separate from Render hosting.
+
+## Limitations
+
+- The app needs a valid OpenAI API key to generate a real response.
+- Output quality and response time depend on the selected model and service availability.
+- Public deployments can consume API quota if the URL is shared.
+- A free hosting service may sleep when idle.
+- The application is a learning demonstration, not a production safety or fact-checking system.
+
+## Future Improvements
+
+- Add conversation history
+- Add streaming output
+- Add an optional system-prompt editor for advanced users
+- Add usage monitoring and authentication before public sharing
+- Add automated tests around API error responses
 
 ## References
 
-- [Transformers documentation](https://huggingface.co/docs/transformers/index)
-- [Transformers text-generation documentation](https://huggingface.co/docs/transformers/main/en/main_classes/text_generation)
-- [Transformers text-generation pipeline documentation](https://huggingface.co/docs/transformers/main/en/main_classes/pipelines#transformers.TextGenerationPipeline)
+- [OpenAI Responses API reference](https://developers.openai.com/api/reference/cli/resources/responses/methods/create)
+- [OpenAI GPT-4.1 mini model documentation](https://developers.openai.com/api/docs/models/gpt-4.1-mini)
+- [OpenAI API pricing](https://openai.com/api/pricing/)
 - [Gradio documentation](https://www.gradio.app/docs)
-- [Hugging Face Spaces documentation](https://huggingface.co/docs/hub/en/spaces-overview)
-- [Qwen/Qwen2.5-0.5B-Instruct model card](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct)
+- [Render web services documentation](https://render.com/docs/web-services)
