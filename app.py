@@ -1,4 +1,4 @@
-"""Gradio user interface for the OpenAI text-generation demo."""
+"""Gradio user interface for the Groq text-generation demo."""
 
 from __future__ import annotations
 
@@ -7,7 +7,6 @@ import os
 import gradio as gr
 
 from llm import DEFAULT_MODEL, generate_text
-
 
 DEFAULT_TASK = "Creative Writing"
 DEFAULT_TEMPERATURE = 0.7
@@ -52,12 +51,12 @@ def build_demo() -> gr.Blocks:
     with gr.Blocks(title="AI Text Generation App") as demo:
         gr.Markdown("# AI Text Generation App")
         gr.Markdown(
-            "Generate creative writing, answers, or summaries with an OpenAI language model. "
+            "Generate creative writing, answers, or summaries with a Groq-hosted language model. "
             "Choose a task, enter text, adjust the controls, and select **Generate**."
         )
         gr.Markdown(
             f"**Model:** `{DEFAULT_MODEL}`  \n"
-            "**Inference:** OpenAI Responses API (server-side)"
+            "**Inference:** Groq Chat Completions API (server-side)"
         )
 
         with gr.Row():
