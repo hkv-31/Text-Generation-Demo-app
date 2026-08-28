@@ -34,7 +34,9 @@ This beginner-friendly demo shows how to build a real text-generation applicatio
 
 ## Model
 
-The app uses [`Qwen/Qwen2.5-0.5B-Instruct`](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct), a small instruction-tuned causal language model published under the Apache-2.0 license. Its model card provides the recommended Transformers usage. The model is downloaded from the Hugging Face Hub the first time the app starts and is then kept in memory for later requests.
+The deployed default uses [`HuggingFaceTB/SmolLM2-135M-Instruct`](https://huggingface.co/HuggingFaceTB/SmolLM2-135M-Instruct), a compact instruction-tuned causal language model published under the Apache-2.0 license. It is used because Render Free has a 512 MB memory limit and the recommended [`Qwen/Qwen2.5-0.5B-Instruct`](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct) does not fit in that environment. SmolLM2's model card provides the recommended Transformers usage. The selected model is downloaded from the Hugging Face Hub the first time the app starts and then kept in memory for later requests.
+
+To use Qwen on a machine with more memory, set the `MODEL_NAME` environment variable to `Qwen/Qwen2.5-0.5B-Instruct` before starting the app. The app uses the same generation pipeline for either model.
 
 ## How It Works
 
@@ -79,7 +81,7 @@ Create and activate a virtual environment if desired, then install the dependenc
 pip install -r requirements.txt
 ```
 
-The dependency ranges target the versions supported by Hugging Face ZeroGPU: Python 3.10 or 3.12, Gradio 4+, and PyTorch 2.8+. They keep Transformers, Gradio, and Accelerate within compatible major versions.
+The dependency ranges target the versions supported by Hugging Face ZeroGPU and the small-model Render deployment: Python 3.10 or 3.12, Gradio 4+, and PyTorch 2.8+. They keep Transformers, Gradio, and Accelerate within compatible major versions.
 
 ## Usage
 
@@ -143,7 +145,7 @@ The app includes the `@spaces.GPU` decorator required for ZeroGPU. Free personal
 
 ### Option B: Render free web service
 
-If ZeroGPU is not available, Render is a practical free hosting alternative for this Python/Gradio app:
+If ZeroGPU is not available, Render is a practical free hosting alternative for this Python/Gradio app. The app defaults to the smaller SmolLM2 model on Render so it can fit the Free plan's memory limit:
 
 1. Create an account at [Render](https://render.com).
 2. Choose **New → Web Service**.

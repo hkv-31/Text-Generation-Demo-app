@@ -30,7 +30,9 @@ os.environ["USE_TF"] = "0"
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
-MODEL_NAME = "Qwen/Qwen2.5-0.5B-Instruct"
+MODEL_NAME = os.getenv(
+    "MODEL_NAME", "HuggingFaceTB/SmolLM2-135M-Instruct"
+)
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 DEFAULT_TEMPERATURE = 0.7
@@ -51,7 +53,12 @@ def load_model() -> tuple[Any | None, Any | None, str | None]:
     try:
         tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
         model_kwargs = {
-            "torch_dtype": torch.float16 if DEVICE == "cuda" else torch.float32,
+            "torch_dtype": (
+                torch.float16
+                if DEVICE == "cuda"
+                else torch.bfloat16
+            ),
+            "low_cpu_mem_usage": True,
         }
         model = AutoModelForCausalLM.from_pretrained(MODEL_NAME, **model_kwargs)
         model.to(DEVICE)
