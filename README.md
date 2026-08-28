@@ -1,12 +1,3 @@
----
-title: Text Generation Demo
-emoji: ✍️
-colorFrom: blue
-colorTo: indigo
-sdk: gradio
-python_version: "3.10"
----
-
 # Text Generation App
 
 ## Overview
